@@ -8,9 +8,9 @@
 
 바이브 코딩을 주제로 위키백과의 내용을 토대로 제작한 웹 기반 프레젠테이션 프로젝트이다. HTML, CSS, JavaScript만을 사용하여 구현하였으며, 별도의 라이브러리나 서버 환경 없이 웹 브라우저에서 바로 실행할 수 있다.
 
-* **개인 리포지터리:** [GitHub 링크](https://github.com/rabbichi/vibe-coding-2026)
+* **개인 Repository’:** [GitHub 개인 Repository](https://github.com/rabbichi/vibe-coding-2026)
 * **개인 배포 페이지:** [GitHub Pages](https://rabbichi.github.io/vibe-coding-2026/)
-* **팀 리포지터리:** [GitHub 팀 링크](https://github.com/toby0033-afk/vibe-coding-2026-team)
+* **팀 Repository:** [GitHub 팀 Repository](https://github.com/toby0033-afk/vibe-coding-2026-team)
 * **팀 배포 페이지:** [GitHub 팀 Pages](https://toby0033-afk.github.io/vibe-coding-2026-team/)
 
 ### 📋 프로젝트 소개
