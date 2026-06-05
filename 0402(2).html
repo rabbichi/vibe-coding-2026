@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>바카라 — Royal Baccarat</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Noto+Serif+KR:wght@300;400;600&display=swap');
+
+  :root {
+    --green: #1a4d2e;
+    --green-light: #215c38;
+    --green-felt: #1e5c38;
+    --gold: #c9a84c;
+    --gold-light: #e8c96a;
+    --cream: #f5efe0;
+    --red: #c0392b;
+    --black: #0d0d0d;
+    --card-bg: #fff;
+    --shadow: rgba(0,0,0,0.6);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: radial-gradient(ellipse at center, #0a2a18 0%, #05150c 100%);
+    min-height: 100vh;
+    font-family: 'Noto Serif KR', serif;
+    color: var(--cream);
+    overflow-x: hidden;
+  }
+
+  /* ── 배경 텍스처 ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(255,255,255,0.01) 40px, rgba(255,255,255,0.01) 41px),
+      repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(255,255,255,0.01) 40px, rgba(255,255,255,0.01) 41px);
+    pointer-events: none; z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 20px 16px 80px; }
+
+  /* ── 헤더 ── */
+  .header {
+    text-align: center;
+    padding: 30px 0 20px;
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+    margin-bottom: 24px;
+  }
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    color: var(--gold);
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 30px rgba(201,168,76,0.4);
+  }
+  .header p {
+    font-size: 0.8rem;
+    color: rgba(245,239,224,0.5);
+    letter-spacing: 0.2em;
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+
+  /* ── 잔액 표시 ── */
+  .balance-bar {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 24px;
+    padding: 14px 24px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 4px;
+  }
+  .balance-item { text-align: center; }
+  .balance-label { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(245,239,224,0.4); }
+  .balance-value { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--gold); }
+
+  /* ── 베팅 섹션 ── */
+  .bet-section {
+    background: rgba(0,0,0,0.45);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 6px;
+    padding: 24px;
+    margin-bottom: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .bet-group { display: flex; flex-direction: column; gap: 8px; }
+  .bet-group label { font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold-light); }
+
+  .bet-side-btns { display: flex; gap: 10px; }
+  .side-btn {
+    padding: 10px 22px;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(255,255,255,0.05);
+    color: var(--cream);
+  }
+  .side-btn.player  { border-color: #4a90d9; }
+  .side-btn.banker  { border-color: var(--red); }
+  .side-btn.tie     { border-color: #27ae60; }
+  .side-btn.active.player  { background: #4a90d9; color: #fff; }
+  .side-btn.active.banker  { background: var(--red); color: #fff; }
+  .side-btn.active.tie     { background: #27ae60; color: #fff; }
+  .side-btn:hover { filter: brightness(1.2); }
+
+  .chip-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip-btn {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    border: 3px dashed rgba(255,255,255,0.4);
+    background: conic-gradient(from 0deg, #c0392b 0% 16.6%, #fff 16.6% 33.2%, #c0392b 33.2% 50%, #fff 50% 66.6%, #c0392b 66.6% 83.2%, #fff 83.2% 100%);
+    cursor: pointer; font-weight: 700; font-size: 0.7rem;
+    color: #222; transition: transform 0.1s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .chip-btn:hover { transform: scale(1.12); }
+  .chip-btn.gold { background: conic-gradient(from 0deg, var(--gold) 0% 16.6%, #fff 16.6% 33.2%, var(--gold) 33.2% 50%, #fff 50% 66.6%, var(--gold) 66.6% 83.2%, #fff 83.2% 100%); }
+  .chip-btn.black-chip { background: conic-gradient(from 0deg, #222 0% 16.6%, #888 16.6% 33.2%, #222 33.2% 50%, #888 50% 66.6%, #222 66.6% 83.2%, #888 83.2% 100%); color: #fff; }
+
+  .bet-amount-display {
+    text-align: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--gold);
+    min-width: 80px;
+  }
+  .bet-amount-sub { font-size: 0.65rem; color: rgba(245,239,224,0.4); margin-top: 2px; }
+
+  .deal-btn {
+    padding: 14px 40px;
+    background: linear-gradient(135deg, var(--gold) 0%, #a07820 100%);
+    border: none;
+    border-radius: 4px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    color: #1a0e00;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+  }
+  .deal-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(201,168,76,0.5); }
+  .deal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .clear-btn {
+    padding: 14px 20px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .clear-btn:hover { border-color: rgba(255,255,255,0.5); color: #fff; }
+
+  /* ── 테이블 ── */
+  .table-area {
+    background: radial-gradient(ellipse at center, var(--green-felt) 0%, var(--green) 70%, #0d2e1a 100%);
+    border: 3px solid var(--gold);
+    border-radius: 12px;
+    padding: 30px 24px;
+    position: relative;
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.4), 0 8px 40px rgba(0,0,0,0.6);
+    margin-bottom: 24px;
+    min-height: 300px;
+  }
+  .table-area::before {
+    content: '';
+    position: absolute; inset: 6px;
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 8px;
+    pointer-events: none;
+  }
+
+  .table-row {
+    display: flex;
+    justify-content: space-around;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .hand-zone { text-align: center; flex: 1; min-width: 180px; }
+  .hand-title {
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold-light);
+    margin-bottom: 14px;
+  }
+  .hand-title span.score {
+    display: inline-block;
+    margin-left: 8px;
+    background: rgba(0,0,0,0.5);
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    border-radius: 20px;
+    padding: 1px 10px;
+    font-size: 0.9rem;
+    font-family: 'Playfair Display', serif;
+    min-width: 28px;
+  }
+
+  .cards-row { display: flex; justify-content: center; gap: 10px; min-height: 120px; align-items: center; flex-wrap: wrap; }
+
+  /* ── 카드 ── */
+  .card {
+    width: 76px; height: 110px;
+    border-radius: 7px;
+    background: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 2px 4px 12px rgba(0,0,0,0.5);
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+    padding: 5px;
+    position: relative;
+    animation: cardFlip 0.4s ease-out;
+    transform-origin: center;
+    overflow: hidden;
+  }
+  @keyframes cardFlip {
+    from { transform: rotateY(90deg) scale(0.8); opacity: 0; }
+    to   { transform: rotateY(0deg) scale(1);   opacity: 1; }
+  }
+  .card.red  { color: var(--red); }
+  .card.black { color: #111; }
+
+  .card-corner { font-size: 0.8rem; font-weight: 700; line-height: 1.1; }
+  .card-corner.bottom { transform: rotate(180deg); align-self: flex-end; }
+  .card-suit-center {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem; opacity: 0.12;
+  }
+  .card-value-center {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.4rem; font-weight: 700;
+    display: flex; flex-direction: column; align-items: center; line-height: 1;
+  }
+
+  .card-back {
+    width: 76px; height: 110px;
+    border-radius: 7px;
+    background: linear-gradient(135deg, #1a3a6b 0%, #0d1f40 100%);
+    border: 1px solid #4a6fa5;
+    box-shadow: 2px 4px 12px rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; color: rgba(255,255,255,0.2);
+    position: relative; overflow: hidden;
+  }
+  .card-back::before {
+    content: '';
+    position: absolute; inset: 4px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    background: repeating-linear-gradient(
+      45deg, transparent, transparent 5px,
+      rgba(255,255,255,0.03) 5px, rgba(255,255,255,0.03) 6px
+    );
+  }
+
+  .card-slot {
+    width: 76px; height: 110px;
+    border-radius: 7px;
+    border: 2px dashed rgba(255,255,255,0.15);
+    opacity: 0.5;
+  }
+
+  /* ── 결과 배너 ── */
+  .result-banner {
+    display: none;
+    text-align: center;
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 6px;
+    animation: fadeIn 0.5s ease;
+  }
+  .result-banner.show { display: block; }
+  .result-banner.win  { background: rgba(39,174,96,0.2); border: 1px solid #27ae60; }
+  .result-banner.lose { background: rgba(192,57,43,0.2); border: 1px solid var(--red); }
+  .result-banner.tie-res  { background: rgba(241,196,15,0.2); border: 1px solid #f1c40f; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .result-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    margin-bottom: 4px;
+  }
+  .result-detail { font-size: 0.85rem; color: rgba(245,239,224,0.7); }
+
+  /* ── 히스토리 ── */
+  .history-section {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+  .history-title { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+  .history-dots { display: flex; gap: 8px; flex-wrap: wrap; }
+  .history-dot {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; font-weight: 700; color: #fff;
+    border: 2px solid rgba(255,255,255,0.2);
+  }
+  .history-dot.P { background: #2980b9; }
+  .history-dot.B { background: var(--red); }
+  .history-dot.T { background: #27ae60; }
+
+  /* ── 게임 오버 ── */
+  .gameover-modal {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .gameover-modal.show { display: flex; }
+  .gameover-box {
+    background: linear-gradient(160deg, #1a1a0e, #0a2a18);
+    border: 2px solid var(--gold);
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    max-width: 360px;
+  }
+  .gameover-box h2 { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--gold); margin-bottom: 12px; }
+  .gameover-box p  { color: rgba(245,239,224,0.7); margin-bottom: 24px; }
+  .restart-btn {
+    padding: 12px 36px;
+    background: linear-gradient(135deg, var(--gold) 0%, #a07820 100%);
+    border: none; border-radius: 4px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem; color: #1a0e00; cursor: pointer;
+  }
+
+  /* ── 푸터 ── */
+  footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 0.72rem;
+    color: rgba(245,239,224,0.3);
+    letter-spacing: 0.05em;
+    border-top: 1px solid rgba(201,168,76,0.1);
+    line-height: 1.8;
+  }
+
+  /* ── 반응형 ── */
+  @media (max-width: 480px) {
+    .balance-bar { gap: 20px; }
+    .bet-section { flex-direction: column; align-items: center; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- 헤더 -->
+  <header class="header">
+    <h1>♠ Royal Baccarat ♠</h1>
+    <p>바카라 — 럭키 카지노</p>
+  </header>
+
+  <!-- 잔액 바 -->
+  <div class="balance-bar">
+    <div class="balance-item">
+      <div class="balance-label">보유 금액</div>
+      <div class="balance-value" id="balanceDisplay">₩ 1,000,000</div>
+    </div>
+    <div class="balance-item">
+      <div class="balance-label">현재 베팅</div>
+      <div class="balance-value" id="currentBetDisplay">₩ 0</div>
+    </div>
+    <div class="balance-item">
+      <div class="balance-label">총 수익</div>
+      <div class="balance-value" id="profitDisplay">₩ 0</div>
+    </div>
+  </div>
+
+  <!-- 베팅 섹션 -->
+  <div class="bet-section">
+    <div class="bet-group">
+      <label>베팅 대상 선택</label>
+      <div class="bet-side-btns">
+        <button class="side-btn player active" onclick="selectSide('player')">플레이어 (1:1)</button>
+        <button class="side-btn banker" onclick="selectSide('banker')">뱅커 (0.95:1)</button>
+        <button class="side-btn tie" onclick="selectSide('tie')">타이 (8:1)</button>
+      </div>
+    </div>
+    <div class="bet-group">
+      <label>칩 선택</label>
+      <div class="chip-btns">
+        <button class="chip-btn" onclick="addBet(10000)">1만</button>
+        <button class="chip-btn" onclick="addBet(50000)">5만</button>
+        <button class="chip-btn gold" onclick="addBet(100000)">10만</button>
+        <button class="chip-btn gold" onclick="addBet(500000)">50만</button>
+        <button class="chip-btn black-chip" onclick="addBet(1000000)">100만</button>
+      </div>
+    </div>
+    <div class="bet-group" style="align-items:center">
+      <label>베팅액</label>
+      <div class="bet-amount-display" id="betAmountDisplay">₩ 0</div>
+      <div class="bet-amount-sub">클릭으로 추가</div>
+    </div>
+    <div class="bet-group" style="flex-direction:row; gap:10px">
+      <button class="clear-btn" onclick="clearBet()">초기화</button>
+      <button class="deal-btn" id="dealBtn" onclick="deal()">카드 배분 ▶</button>
+    </div>
+  </div>
+
+  <!-- 테이블 -->
+  <div class="table-area">
+    <div class="table-row">
+      <div class="hand-zone">
+        <div class="hand-title">플레이어 <span class="score" id="playerScore">—</span></div>
+        <div class="cards-row" id="playerCards">
+          <div class="card-slot"></div>
+          <div class="card-slot"></div>
+          <div class="card-slot" id="playerSlot3" style="display:none"></div>
+        </div>
+      </div>
+      <div class="hand-zone">
+        <div class="hand-title">뱅커 <span class="score" id="bankerScore">—</span></div>
+        <div class="cards-row" id="bankerCards">
+          <div class="card-slot"></div>
+          <div class="card-slot"></div>
+          <div class="card-slot" id="bankerSlot3" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 결과 배너 -->
+    <div class="result-banner" id="resultBanner">
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-detail" id="resultDetail"></div>
+    </div>
+  </div>
+
+  <!-- 베팅 히스토리 -->
+  <div class="history-section">
+    <div class="history-title">최근 결과</div>
+    <div class="history-dots" id="historyDots">
+      <span style="color:rgba(245,239,224,0.3); font-size:0.75rem">아직 게임 결과 없음</span>
+    </div>
+  </div>
+
+</div><!-- /wrapper -->
+
+<!-- 게임 오버 모달 -->
+<div class="gameover-modal" id="gameoverModal">
+  <div class="gameover-box">
+    <h2>게임 종료</h2>
+    <p id="gameoverMsg"></p>
+    <button class="restart-btn" onclick="restartGame()">새 게임 시작</button>
+  </div>
+</div>
+
+<!-- 푸터 -->
+<footer>
+  사교 22 김지원 &nbsp;|&nbsp; 경영 24 김소영 &nbsp;|&nbsp; 경영 23 김성아 &nbsp;|&nbsp; 건반 22 박지민 &nbsp;|&nbsp; 영문 23 유채린
+</footer>
+
+<script>
+// ═══════════════════════════════
+//  게임 상태
+// ═══════════════════════════════
+const INITIAL_BALANCE = 1_000_000;
+let balance   = INITIAL_BALANCE;
+let totalProfit = 0;
+let betAmount = 0;
+let betSide   = 'player';
+let history   = [];
+let isDealing = false;
+
+// ═══════════════════════════════
+//  카드 덱
+// ═══════════════════════════════
+const SUITS = ['♠','♥','♦','♣'];
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+function buildDeck() {
+  const deck = [];
+  for (const s of SUITS) for (const r of RANKS) deck.push({suit:s, rank:r});
+  return deck;
+}
+
+function shuffle(deck) {
+  for (let i = deck.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [deck[i],deck[j]] = [deck[j],deck[i]];
+  }
+  return deck;
+}
+
+// 바카라 카드 값
+function cardValue(rank) {
+  if (['J','Q','K'].includes(rank)) return 0;
+  if (rank === 'A') return 1;
+  return parseInt(rank);
+}
+
+// 핸드 합계 (한 자리)
+function handTotal(cards) {
+  return cards.reduce((s,c) => s + cardValue(c.rank), 0) % 10;
+}
+
+// ═══════════════════════════════
+//  베팅 UI
+// ═══════════════════════════════
+function selectSide(side) {
+  betSide = side;
+  document.querySelectorAll('.side-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.side-btn.'+side).classList.add('active');
+}
+
+function addBet(amount) {
+  if (isDealing) return;
+  if (betAmount + amount > balance) {
+    betAmount = balance;
+  } else {
+    betAmount += amount;
+  }
+  updateBetDisplay();
+}
+
+function clearBet() {
+  if (isDealing) return;
+  betAmount = 0;
+  updateBetDisplay();
+}
+
+function updateBetDisplay() {
+  document.getElementById('currentBetDisplay').textContent = '₩ ' + betAmount.toLocaleString();
+  document.getElementById('betAmountDisplay').textContent  = '₩ ' + betAmount.toLocaleString();
+}
+
+function updateBalanceDisplay() {
+  document.getElementById('balanceDisplay').textContent = '₩ ' + balance.toLocaleString();
+  const p = balance - INITIAL_BALANCE;
+  const el = document.getElementById('profitDisplay');
+  el.textContent = (p >= 0 ? '+' : '') + '₩ ' + p.toLocaleString();
+  el.style.color = p >= 0 ? '#27ae60' : '#c0392b';
+}
+
+// ═══════════════════════════════
+//  카드 렌더링
+// ═══════════════════════════════
+function isRed(suit) { return suit === '♥' || suit === '♦'; }
+
+function renderCard(card, delay=0) {
+  const div = document.createElement('div');
+  div.className = 'card ' + (isRed(card.suit) ? 'red' : 'black');
+  div.style.animationDelay = delay + 'ms';
+  div.innerHTML = `
+    <div class="card-corner">${card.rank}<br>${card.suit}</div>
+    <div class="card-suit-center">${card.suit}</div>
+    <div class="card-value-center">${card.rank}<br><span style="font-size:1rem">${card.suit}</span></div>
+    <div class="card-corner bottom">${card.rank}<br>${card.suit}</div>
+  `;
+  return div;
+}
+
+function renderBack() {
+  const div = document.createElement('div');
+  div.className = 'card-back';
+  div.innerHTML = '🂠';
+  return div;
+}
+
+// ═══════════════════════════════
+//  메인 딜 로직
+// ═══════════════════════════════
+async function deal() {
+  if (isDealing) return;
+  if (betAmount <= 0) { alert('베팅 금액을 선택하세요.'); return; }
+  if (betAmount > balance) { alert('보유 금액이 부족합니다.'); return; }
+
+  isDealing = true;
+  document.getElementById('dealBtn').disabled = true;
+
+  // 베팅 차감
+  balance -= betAmount;
+  updateBalanceDisplay();
+
+  // 결과 초기화
+  document.getElementById('resultBanner').className = 'result-banner';
+  document.getElementById('playerScore').textContent = '—';
+  document.getElementById('bankerScore').textContent = '—';
+
+  // 덱 준비
+  const deck = shuffle(buildDeck().concat(buildDeck().concat(buildDeck().concat(buildDeck().concat(buildDeck().concat(buildDeck()))))));
+
+  // 초기 4장
+  const pCards = [deck.pop(), deck.pop()];
+  const bCards = [deck.pop(), deck.pop()];
+
+  // 플레이어 영역 초기화
+  const pZone = document.getElementById('playerCards');
+  const bZone = document.getElementById('bankerCards');
+  pZone.innerHTML = '';
+  bZone.innerHTML = '';
+
+  // 카드 뒷면으로 먼저 표시
+  pZone.appendChild(renderBack()); await wait(200);
+  bZone.appendChild(renderBack()); await wait(200);
+  pZone.appendChild(renderBack()); await wait(200);
+  bZone.appendChild(renderBack()); await wait(300);
+
+  // 앞면 공개
+  pZone.innerHTML = '';
+  bZone.innerHTML = '';
+  pZone.appendChild(renderCard(pCards[0], 0));
+  pZone.appendChild(renderCard(pCards[1], 120));
+  bZone.appendChild(renderCard(bCards[0], 240));
+  bZone.appendChild(renderCard(bCards[1], 360));
+  await wait(700);
+
+  let pTotal = handTotal(pCards);
+  let bTotal = handTotal(bCards);
+  document.getElementById('playerScore').textContent = pTotal;
+  document.getElementById('bankerScore').textContent = bTotal;
+
+  // ── 내추럴 체크
+  let gameOver = false;
+  if (pTotal >= 8 || bTotal >= 8) {
+    gameOver = true;
+  }
+
+  // ── 3번째 카드 규칙
+  let pThird = null, bThird = null;
+
+  if (!gameOver) {
+    // 플레이어 규칙: 0-5이면 추가 드로우
+    if (pTotal <= 5) {
+      pThird = deck.pop();
+      await wait(400);
+      pZone.appendChild(renderCard(pThird, 0));
+      pTotal = handTotal([...pCards, pThird]);
+      document.getElementById('playerScore').textContent = pTotal;
+      await wait(400);
+    }
+
+    // 뱅커 규칙
+    const shouldBankerDraw = () => {
+      if (bTotal >= 7) return false;
+      if (bTotal <= 2) return true;
+      if (bTotal === 3) return pThird === null || cardValue(pThird.rank) !== 8;
+      if (bTotal === 4) return pThird === null || [2,3,4,5,6,7].includes(cardValue(pThird.rank));
+      if (bTotal === 5) return pThird === null || [4,5,6,7].includes(cardValue(pThird.rank));
+      if (bTotal === 6) return pThird !== null && [6,7].includes(cardValue(pThird.rank));
+      return false;
+    };
+
+    if (shouldBankerDraw()) {
+      bThird = deck.pop();
+      await wait(400);
+      bZone.appendChild(renderCard(bThird, 0));
+      bTotal = handTotal([...bCards, bThird]);
+      document.getElementById('bankerScore').textContent = bTotal;
+      await wait(400);
+    }
+  }
+
+  // ── 승패 결정
+  await wait(300);
+  let winner;
+  if (pTotal > bTotal) winner = 'player';
+  else if (bTotal > pTotal) winner = 'banker';
+  else winner = 'tie';
+
+  // ── 배당 계산
+  let payout = 0;
+  let resultClass = 'lose';
+  let resultMsg = '';
+  let detailMsg = '';
+
+  if (winner === betSide) {
+    if (betSide === 'player') {
+      payout = betAmount * 2;
+      resultMsg = '🎉 플레이어 승리!';
+    } else if (betSide === 'banker') {
+      payout = Math.floor(betAmount * 1.95);
+      resultMsg = '🏆 뱅커 승리!';
+    } else {
+      payout = betAmount * 9;
+      resultMsg = '🤝 타이!';
+    }
+    balance += payout;
+    const gain = payout - betAmount;
+    detailMsg = `베팅 ${betAmount.toLocaleString()}원 → +${gain.toLocaleString()}원 획득 (총 ${payout.toLocaleString()}원 반환)`;
+    resultClass = 'win';
+  } else if (winner === 'tie' && betSide !== 'tie') {
+    // 타이일 때 플레이어/뱅커 베팅은 무효(환불)
+    payout = betAmount;
+    balance += payout;
+    resultMsg = '🤝 타이 — 베팅 환불';
+    detailMsg = `타이 무효 처리: ${betAmount.toLocaleString()}원 환불`;
+    resultClass = 'tie-res';
+  } else {
+    resultMsg = winner === 'player' ? '😔 플레이어 승리 — 패배' : '😔 뱅커 승리 — 패배';
+    detailMsg = `베팅 ${betAmount.toLocaleString()}원 손실`;
+    resultClass = 'lose';
+  }
+
+  totalProfit = balance - INITIAL_BALANCE;
+  updateBalanceDisplay();
+
+  const banner = document.getElementById('resultBanner');
+  banner.className = 'result-banner show ' + resultClass;
+  document.getElementById('resultTitle').textContent = resultMsg;
+  document.getElementById('resultDetail').textContent =
+    `플레이어 ${pTotal}점  vs  뱅커 ${bTotal}점  |  ${detailMsg}`;
+
+  // 히스토리 추가
+  history.push(winner === 'player' ? 'P' : winner === 'banker' ? 'B' : 'T');
+  renderHistory();
+
+  // 베팅 초기화
+  betAmount = 0;
+  updateBetDisplay();
+
+  isDealing = false;
+  document.getElementById('dealBtn').disabled = false;
+
+  // 게임 오버 체크
+  if (balance <= 0) {
+    await wait(1000);
+    document.getElementById('gameoverMsg').textContent =
+      `보유 금액이 모두 소진되었습니다.\n최종 게임 수: ${history.length}회`;
+    document.getElementById('gameoverModal').classList.add('show');
+  }
+}
+
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ═══════════════════════════════
+//  히스토리
+// ═══════════════════════════════
+function renderHistory() {
+  const container = document.getElementById('historyDots');
+  container.innerHTML = '';
+  const recent = history.slice(-30);
+  if (recent.length === 0) {
+    container.innerHTML = '<span style="color:rgba(245,239,224,0.3); font-size:0.75rem">아직 게임 결과 없음</span>';
+    return;
+  }
+  recent.forEach(r => {
+    const dot = document.createElement('div');
+    dot.className = 'history-dot ' + r;
+    dot.textContent = r === 'P' ? '플' : r === 'B' ? '뱅' : '타';
+    container.appendChild(dot);
+  });
+}
+
+// ═══════════════════════════════
+//  재시작
+// ═══════════════════════════════
+function restartGame() {
+  balance = INITIAL_BALANCE;
+  totalProfit = 0;
+  betAmount = 0;
+  history = [];
+  isDealing = false;
+  updateBalanceDisplay();
+  updateBetDisplay();
+  renderHistory();
+  document.getElementById('gameoverModal').classList.remove('show');
+  document.getElementById('resultBanner').className = 'result-banner';
+  document.getElementById('playerScore').textContent = '—';
+  document.getElementById('bankerScore').textContent = '—';
+  document.getElementById('playerCards').innerHTML = '<div class="card-slot"></div><div class="card-slot"></div>';
+  document.getElementById('bankerCards').innerHTML = '<div class="card-slot"></div><div class="card-slot"></div>';
+  document.getElementById('dealBtn').disabled = false;
+}
+
+// 초기화
+updateBalanceDisplay();
+</script>
+</body>
+</html>

@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casino High-Low Gold</title>
+    <style>
+        :root {
+            /* 카지노 테마 색상 */
+            --table-green: #0a5c2f;
+            --table-border: #b8860b; /* 다크 골드 */
+            --card-white: #ffffff;
+            --card-black: #000000;
+            --card-red: #d40000;
+            --gold-text: #f1c40f;
+            --btn-bg: #800000; /* 마룬 레드 */
+            --btn-hover: #a00000;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--table-green);
+            background-image: radial-gradient(circle, #1a7a4a 0%, #0a5c2f 100%); /* 펠트 느낌 */
+            color: white;
+            font-family: 'Georgia', serif; /* 클래식한 폰트 */
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            user-select: none;
+            border: 15px solid var(--table-border);
+            box-sizing: border-box;
+        }
+
+        /* 컨트롤 및 스코어 (상단) */
+        #top-bar {
+            position: absolute;
+            top: 20px;
+            width: 90%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        #lang-selector button {
+            padding: 5px 10px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: 1px solid var(--gold-text);
+            font-family: sans-serif;
+            margin-left: 5px;
+        }
+
+        #score-board {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--gold-text);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            display: flex;
+            gap: 40px;
+            background: rgba(0,0,0,0.3);
+            padding: 10px 30px;
+            border-radius: 50px;
+        }
+
+        /* 메인 게임 구역 */
+        #game-container {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-top: 60px;
+        }
+
+        /* 플레이어별 카드 배치 구역 */
+        #battle-field {
+            display: flex;
+            gap: 100px;
+            margin-bottom: 30px;
+            perspective: 1000px; /* 3D 효과 */
+        }
+
+        .player-slot {
+            text-align: center;
+            width: 150px;
+        }
+
+        .player-label {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #ccc;
+        }
+
+        /* 중앙 안내 문구 */
+        #status-msg {
+            font-size: 36px;
+            height: 50px;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            font-weight: bold;
+        }
+
+        /* 카드 선택 구역 (부채꼴) */
+        #card-deck-area {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        /* --- 고급 카드 그래픽 CSS --- */
+        .card {
+            width: 130px;
+            height: 190px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            position: absolute; /* 부채꼴 배치용 */
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.5s;
+            cursor: pointer;
+            background: white;
+        }
+
+        /* 카드 앞/뒷면 공통 */
+        .card-front, .card-back {
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            position: absolute;
+            top: 0; left: 0;
+            backface-visibility: hidden;
+            border: 1px solid #999;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+
+        /* 카드 뒷면 - 고급스러운 패턴 */
+        .card-back {
+            background-color: #2c3e50;
+            background-image: 
+                linear-gradient(135deg, #34495e 25%, transparent 25%), 
+                linear-gradient(225deg, #34495e 25%, transparent 25%), 
+                linear-gradient(45deg, #34495e 25%, transparent 25%), 
+                linear-gradient(315deg, #34495e 25%, transparent 25%);
+            background-position: 10px 0, 10px 0, 0 0, 0 0;
+            background-size: 20px 20px;
+            background-repeat: repeat;
+            border: 6px solid white;
+        }
+
+        /* 카드 앞면 */
+        .card-front {
+            background: var(--card-white);
+            transform: rotateY(180deg);
+            color: black;
+            justify-content: space-between;
+        }
+
+        .card-corner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+        }
+        .card-corner.bottom { transform: rotate(180deg); }
+        .card-rank { font-size: 28px; font-weight: bold; }
+        .card-suit { font-size: 20px; }
+        .card-center-suit {
+            font-size: 72px;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* 카드 상태 클래스 */
+        .card.flipped { transform: rotateY(180deg); }
+        .card.on-slot { position: relative; transform: rotateY(0deg) !important; left: 0 !important; bottom: 0 !important; cursor: default;}
+        .card.on-slot.flipped { transform: rotateY(180deg) !important; }
+
+        /* 결과 애니메이션 효과 */
+        .win-effect { color: #2ecc71; animation: win-pulse 1s infinite alternate; }
+        .lose-effect { color: #e74c3c; }
+        .draw-effect { color: #aaa; }
+
+        @keyframes win-pulse {
+            from { transform: scale(1); text-shadow: 0 0 5px #2ecc71; }
+            to { transform: scale(1.1); text-shadow: 0 0 20px var(--gold-text); }
+        }
+
+        /* 초기 화면 및 최종 승자 오버레이 */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+
+        #final-winner-text {
+            font-size: 100px;
+            color: var(--gold-text);
+            font-weight: bold;
+            text-shadow: 0 0 30px var(--gold-text);
+            margin-bottom: 50px;
+        }
+
+        /* 하단 버튼 및 푸터 */
+        .bottom-controls { margin-bottom: 20px; z-index: 100; }
+        
+        button.main-btn {
+            padding: 15px 40px;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            border: 3px solid var(--gold-text);
+            border-radius: 10px;
+            background: var(--btn-bg);
+            color: white;
+            box-shadow: 0 5px 0 #500;
+            transition: all 0.1s;
+        }
+        button.main-btn:hover { background: var(--btn-hover); }
+        button.main-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #500; }
+
+        footer {
+            position: absolute;
+            bottom: 5px;
+            font-size: 12px;
+            font-family: sans-serif;
+            color: rgba(255,255,255,0.5);
+            width: 100%;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="top-bar">
+        <div id="score-board">
+            <div>P1: <span id="p1-score">0</span></div>
+            <div>P2: <span id="p2-score">0</span></div>
+        </div>
+        <div id="lang-selector">
+            <button onclick="changeLang('ko')">KO</button>
+            <button onclick="changeLang('en')">EN</button>
+            <button onclick="changeLang('zh')">ZH</button>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div id="status-msg"></div>
+
+        <div id="battle-field">
+            <div class="player-slot">
+                <div class="player-label">PLAYER 1</div>
+                <div id="p1-slot" style="width:130px; height:190px; border:2px dashed rgba(255,255,255,0.3); border-radius:12px; position:relative;"></div>
+            </div>
+            <div class="player-slot">
+                <div class="player-label">PLAYER 2</div>
+                <div id="p2-slot" style="width:130px; height:190px; border:2px dashed rgba(255,255,255,0.3); border-radius:12px; position:relative;"></div>
+            </div>
+        </div>
+
+        <div id="card-deck-area">
+            </div>
+    </div>
+
+    <div class="bottom-controls">
+        <button id="reset-btn" class="main-btn" onclick="askReset()">RESET</button>
+    </div>
+
+    <div id="start-overlay" class="overlay">
+        <h1 id="intro-text" style="font-size:48px; color:var(--gold-text); margin-bottom:40px;">게임을 시작하시겠습니까?</h1>
+        <div style="height:200px; position:relative; width:400px; margin-bottom:40px;" id="demo-deck"></div>
+        <button id="start-btn" class="main-btn" onclick="initGame()">START</button>
+    </div>
+
+    <div id="winner-overlay" class="overlay" style="display:none;">
+        <div id="final-winner-text"></div>
+        <button class="main-btn" onclick="backToIntro()">OK</button>
+    </div>
+
+    <footer>
+        사교 22 김지원 | 경영 24 김소영 | 경영 23 김성아 | 건반 22 박지민 | 영문 23 유채린
+    </footer>
+
+    <script>
+        // --- 검수된 다국어 데이터 ---
+        const i18n = {
+            ko: {
+                intro: "게임을 시작하시겠습니까?",
+                p1Turn: "플레이어 1, 카드를 고르세요!",
+                p2Turn: "플레이어 2, 카드를 고르세요!",
+                compare: "카드 공개!",
+                draw: "무승부! 같은 덱에서 다시 뽑습니다.",
+                invalid: "J, Q, K 등장 (무효)! 다시 뽑습니다.",
+                roundWin: "P1 라운드 승리!",
+                roundLose: "P2 라운드 승리!",
+                gameWin: "PLAYER 1 WIN!",
+                gameWin2: "PLAYER 2 WIN!",
+                resetConfirm: "게임을 초기화하고 처음으로 돌아갈까요?"
+            },
+            en: {
+                intro: "Shall we start the game?",
+                p1Turn: "Player 1, pick a card!",
+                p2Turn: "Player 2, pick a card!",
+                compare: "Open cards!",
+                draw: "Draw! Pick again from the same deck.",
+                invalid: "J, Q, K (Invalid)! Pick again.",
+                roundWin: "P1 Wins Round!",
+                roundLose: "P2 Wins Round!",
+                gameWin: "PLAYER 1 WIN!",
+                gameWin2: "PLAYER 2 WIN!",
+                resetConfirm: "Reset game and back to intro?"
+            },
+            zh: {
+                intro: "开始游戏吗？",
+                p1Turn: "玩家 1, 请选牌!",
+                p2Turn: "玩家 2, 请选牌!",
+                compare: "开牌!",
+                draw: "平局! 从同一副牌中重新 추牌。",
+                invalid: "出现 J, Q, K (无效)! 重新选牌。",
+                roundWin: "玩家 1 获胜!",
+                roundLose: "玩家 2 获胜!",
+                gameWin: "玩家 1 获胜!",
+                gameWin2: "玩家 2 获胜!",
+                resetConfirm: "重置游戏并回到主页吗？"
+            }
+        };
+
+        let currentLang = 'ko';
+        let p1Score = 0;
+        let p2Score = 0;
+        let p1ChosenCardData = null;
+        let p2ChosenCardData = null;
+        let p1CardEl = null; // 슬롯에 간 카드 객체
+        let p2CardEl = null;
+        let deck = [];
+        let gameState = 'INTRO'; 
+        
+        // Web Audio API
+        let audioCtx;
+        let beatInterval;
+
+        // --- 오디오 생성 (심박수) ---
+        function playHeartbeat() {
+            if(!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(55, audioCtx.currentTime); // 낮은음
+            gainNode.gain.setValueAtTime(0.6, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.6);
+        }
+
+        function startBeat(speed) {
+            stopBeat();
+            playHeartbeat();
+            beatInterval = setInterval(playHeartbeat, speed);
+        }
+        function stopBeat() {
+            clearInterval(beatInterval);
+        }
+
+        // --- 카드 덱 생성 ---
+        function createDeck() {
+            const suits = ['♠', '♥', '♦', '♣'];
+            const names = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            const newDeck = [];
+            
+            for (let suit of suits) {
+                for (let i = 0; i < names.length; i++) {
+                    newDeck.push({
+                        name: names[i],
+                        value: i + 1, 
+                        suit: suit,
+                        color: (suit === '♥' || suit === '♦') ? 'red' : 'black',
+                        isJoker: false
+                    });
+                }
+            }
+            newDeck.push({ name: 'JOKER', value: 99, suit: '🃏', color: 'black', isJoker: true });
+            newDeck.push({ name: 'JOKER', value: 99, suit: '🃏', color: 'red', isJoker: true });
+            return shuffle(newDeck);
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // --- UI & 언어 ---
+        function changeLang(lang) {
+            currentLang = lang;
+            updateTexts();
+        }
+
+        function updateTexts() {
+            document.getElementById('intro-text').innerText = i18n[currentLang].intro;
+            document.getElementById('reset-btn').innerText = (currentLang === 'ko' ? '초기화' : (currentLang === 'zh' ? '重置' : 'RESET'));
+            
+            if (gameState === 'P1_TURN') setStatus(i18n[currentLang].p1Turn);
+            else if (gameState === 'P2_TURN') setStatus(i18n[currentLang].p2Turn);
+        }
+
+        function setStatus(text, effectClass = '') {
+            const el = document.getElementById('status-msg');
+            el.innerText = text;
+            el.className = effectClass;
+        }
+
+        // --- 카드 요소 생성 ---
+        function createCardElement(cardData) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card';
+            
+            const color = cardData.color === 'red' ? 'var(--card-red)' : 'var(--card-black)';
+
+            cardEl.innerHTML = `
+                <div class="card-back"></div>
+                <div class="card-front" style="color: ${color}">
+                    <div class="card-corner top">
+                        <div class="card-rank">${cardData.name}</div>
+                        <div class="card-suit">${cardData.suit}</div>
+                    </div>
+                    <div class="card-center-suit">${cardData.suit}</div>
+                    <div class="card-corner bottom">
+                        <div class="card-rank">${cardData.name}</div>
+                        <div class="card-suit">${cardData.suit}</div>
+                    </div>
+                </div>
+            `;
+            return cardEl;
+        }
+
+        // --- 뽑는 구역 부채꼴 렌더링 ---
+        function renderDeckFan() {
+            const area = document.getElementById('card-deck-area');
+            area.innerHTML = '';
+            
+            // 너무 많으면 렉걸리므로 남은 덱 중 최대 24장만 표시
+            const displayCount = Math.min(deck.length, 24);
+            const mid = (displayCount - 1) / 2;
+
+            for (let i = 0; i < displayCount; i++) {
+                const cardData = deck[i];
+                const cardEl = createCardElement(cardData);
+                
+                // 부채꼴 배치 계산
+                const angle = (i - mid) * 3; // 각도
+                const radius = 600; // 곡률
+                const x = (i - mid) * 20; // 가로 간격
+                const y = -Math.sqrt(radius * radius - x * x) + radius; // 세로 곡선
+
+                cardEl.style.transform = `translateX(${x}px) translateY(${y}px) rotate(${angle}deg)`;
+                cardEl.style.zIndex = i;
+
+                cardEl.onclick = () => handleCardClick(i, cardData);
+                area.appendChild(cardEl);
+            }
+        }
+
+        // --- 카드 클릭 핸들러 (승부 로직 핵심) ---
+        function handleCardClick(deckIndex, cardData) {
+            if (gameState !== 'P1_TURN' && gameState !== 'P2_TURN') return;
+
+            // 오디오 시작 (처음 클릭 시)
+            if(!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                startBeat(800);
+            }
+
+            // 덱에서 제거
+            deck.splice(deckIndex, 1);
+
+            // 다른 카드들 사라짐 효과
+            const area = document.getElementById('card-deck-area');
+            const cards = area.querySelectorAll('.card');
+            cards.forEach(el => el.style.opacity = '0');
+
+            setTimeout(() => {
+                area.innerHTML = ''; // 뽑는 구역 비움
+
+                if (gameState === 'P1_TURN') {
+                    p1ChosenCardData = cardData;
+                    p1CardEl = createCardElement(cardData);
+                    p1CardEl.classList.add('on-slot'); // 뒷면 상태로 슬롯 배치
+                    document.getElementById('p1-slot').appendChild(p1CardEl);
+                    
+                    gameState = 'P2_TURN';
+                    updateTexts();
+                    renderDeckFan(); // P2용 다시 깔기
+                    startBeat(600); // 심박수 빨라짐
+                } else {
+                    p2ChosenCardData = cardData;
+                    p2CardEl = createCardElement(cardData);
+                    p2CardEl.classList.add('on-slot');
+                    document.getElementById('p2-slot').appendChild(p2CardEl);
+                    
+                    gameState = 'COMPARE';
+                    stopBeat();
+                    revealAndCompare();
+                }
+            }, 600);
+        }
+
+        // --- 카드 공개 및 비교 (승패 시각화) ---
+        function revealAndCompare() {
+            setStatus(i18n[currentLang].compare);
+            startBeat(200); // 매우 빠르게 몇번 비트
+
+            setTimeout(() => {
+                stopBeat();
+                // 카드 뒤집기
+                p1CardEl.classList.add('flipped');
+                p2CardEl.classList.add('flipped');
+
+                setTimeout(compareLogic, 1000); // 뒤집히고 1초 후 로직 실행
+            }, 1000);
+        }
+
+        function compareLogic() {
+            let winner = 0; // 0 draw, 1 p1, 2 p2
+
+            const c1 = p1ChosenCardData;
+            const c2 = p2ChosenCardData;
+
+            // 1. 조커 로직
+            if (c1.isJoker && c2.isJoker) winner = 0;
+            else if (c1.isJoker) winner = 1;
+            else if (c2.isJoker) winner = 2;
+            // 2. JQK 무효 로직
+            else if (c1.value > 10 || c2.value > 10) {
+                setStatus(i18n[currentLang].invalid, 'draw-effect');
+                setTimeout(resetRound, 2000);
+                return; // 점수 안주고 리셋
+            }
+            // 3. 숫자 비교
+            else if (c1.value > c2.value) winner = 1;
+            else if (c2.value > c1.value) winner = 2;
+            else winner = 0; // 동점
+
+            // 결과 처리
+            if (winner === 1) {
+                p1Score++;
+                setStatus(i18n[currentLang].roundWin, 'win-effect');
+                p1CardEl.style.boxShadow = "0 0 30px #2ecc71"; // 승자 카드 강조
+            } else if (winner === 2) {
+                p2Score++;
+                setStatus(i18n[currentLang].roundLose, 'lose-effect');
+                p2CardEl.style.boxShadow = "0 0 30px #e74c3c";
+            } else {
+                setStatus(i18n[currentLang].draw, 'draw-effect');
+            }
+
+            // 점수 업데이트
+            document.getElementById('p1-score').innerText = p1Score;
+            document.getElementById('p2-score').innerText = p2Score;
+
+            // 최종 우승 체크
+            if (p1Score >= 5 || p2Score >= 5) {
+                setTimeout(() => showFinalWinner(p1Score >= 5 ? 1 : 2), 2000);
+            } else {
+                setTimeout(resetRound, 2500); // 라운드 리셋
+            }
+        }
+
+        // --- 라운드 정리 및 다음 라운드 준비 ---
+        function resetRound() {
+            // 슬롯 비우기
+            document.getElementById('p1-slot').innerHTML = '';
+            document.getElementById('p2-slot').innerHTML = '';
+            p1ChosenCardData = null;
+            p2ChosenCardData = null;
+            
+            // 덱이 부족하면 다시 생성 (무승부 지속 시 대비)
+            if(deck.length < 2) deck = createDeck();
+
+            gameState = 'P1_TURN';
+            updateTexts();
+            renderDeckFan();
+        }
+
+        // --- 최종 게임 우승 ---
+        function showFinalWinner(playerNum) {
+            stopBeat();
+            const overlay = document.getElementById('winner-overlay');
+            const textEl = document.getElementById('final-winner-text');
+            textEl.innerText = playerNum === 1 ? i18n[currentLang].gameWin : i18n[currentLang].gameWin2;
+            overlay.style.display = 'flex';
+            gameState = 'FINISHED';
+        }
+
+        // --- 게임 초기화 로직 ---
+        function initGame() {
+            // 오디오 컨텍스트 허용 (크롬 정책)
+            if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            p1Score = 0;
+            p2Score = 0;
+            document.getElementById('p1-score').innerText = '0';
+            document.getElementById('p2-score').innerText = '0';
+            document.getElementById('start-overlay').style.display = 'none';
+            document.getElementById('winner-overlay').style.display = 'none';
+            
+            // 슬롯 초기화 (혹시 남아있을 카드 제거)
+            document.getElementById('p1-slot').innerHTML = '';
+            document.getElementById('p2-slot').innerHTML = '';
+
+            deck = createDeck();
+            gameState = 'P1_TURN';
+            updateTexts();
+            renderDeckFan();
+        }
+
+        function askReset() {
+            if(confirm(i18n[currentLang].resetConfirm)){
+                backToIntro();
+            }
+        }
+
+        function backToIntro() {
+            stopBeat();
+            gameState = 'INTRO';
+            document.getElementById('start-overlay').style.display = 'flex';
+            document.getElementById('winner-overlay').style.display = 'none';
+            setStatus("");
+            // 초기 슬롯 비우기
+            document.getElementById('p1-slot').innerHTML = '';
+            document.getElementById('p2-slot').innerHTML = '';
+        }
+
+        // 초기 화면 데모 부채꼴
+        function renderDemo() {
+            const demo = document.getElementById('demo-deck');
+            const demoDeck = createDeck().splice(0, 10);
+            const mid = 4.5;
+            demoDeck.forEach((data, i) => {
+                const card = createCardElement(data);
+                card.style.transform = `translateX(${(i-mid)*25}px) rotate(${(i-mid)*4}deg)`;
+                card.style.bottom = "0";
+                card.style.cursor = "default";
+                demo.appendChild(card);
+            });
+        }
+        
+        // 언어 초기 설정 및 데모 실행
+        updateTexts();
+        renderDemo();
+
+    </script>
+</body>
+</html>
