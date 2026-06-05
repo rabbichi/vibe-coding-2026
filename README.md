@@ -1,4 +1,4 @@
-# 💻 Vibe Coding Web Presentation
+# 💻 AI와 비즈니스 애플리케이션(Mission 6)
 
 바이브 코딩(Vibe Coding)을 주제로 제작한 웹 기반 프레젠테이션 프로젝트이다. HTML, CSS, JavaScript만을 사용하여 구현하였으며, 별도의 라이브러리나 서버 환경 없이 웹 브라우저에서 바로 실행할 수 있다.
 
